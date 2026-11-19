@@ -381,7 +381,7 @@ export default function JovikaApp() {
           <div className="wrap">
             <div className="sec-head">
               <div><div className="eyebrow">Katalog</div><h2>Hari ini main apa?</h2></div>
-              <input className="search" id="search" type="search" placeholder="Cari nama game..." value={search} onChange={(e) => setSearch(e.target.value)} />
+              <input className="search" id="search" name="search" type="search" aria-label="Cari nama game" autoComplete="off" placeholder="Cari nama game..." value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
             <div className="filters" id="filters">
               {cats.map((c) => (
@@ -463,7 +463,7 @@ export default function JovikaApp() {
             </div>
             <div>
               <form className="cekform" id="cekform" onSubmit={onCek}>
-                <input id="inv" placeholder="Contoh: JVK-240118" required value={invInput} onChange={(e) => setInvInput(e.target.value)} />
+                <input id="inv" name="invoice" aria-label="Nomor invoice" autoComplete="off" spellCheck={false} placeholder="Contoh: JVK-240118" required value={invInput} onChange={(e) => setInvInput(e.target.value)} />
                 <button className="btn" type="submit">Cek</button>
               </form>
               <div className={`result${cekResult ? " show" : ""}`} id="result">
@@ -516,67 +516,81 @@ export default function JovikaApp() {
               <div><h3 id="mtitle">{isPpob(m.g) ? "Bayar " : "Top Up "}{m.g.name}</h3><small id="mpub">{m.g.pub}</small></div>
               <button className="close" id="mclose" aria-label="Tutup" onClick={closeModal}>×</button>
             </div>
-            <div className="steps" id="steps">
+            <div className="steps" id="steps" aria-label="Langkah checkout">
               {stepLabels.map((label, i) => {
                 const idx = i + 1;
                 const cls = idx === m.step ? "on" : idx < m.step ? "done" : "";
-                return <div key={i} className={cls}>{label}</div>;
+                const text = label.replace(/^\d+\.\s*/, "");
+                return (
+                  <div key={i} className={`st ${cls}`.trim()}>
+                    <span className="stn">{idx < m.step ? "✓" : idx}</span>
+                    <span className="stl">{text}</span>
+                  </div>
+                );
               })}
             </div>
             <div className="mbody" id="mbody">
               {m.step === 1 && (
-                <div className="block">
+                <div className="block formstep">
                   {isPpob(m.g) && (
                     <div className="svcinfo">{(INFO[m.g.id] || []).map((t) => <span key={t}>{t}</span>)}</div>
                   )}
-                  <h4><em>1</em>{isPpob(m.g) ? "Masukkan data pelanggan" : "Masukkan data akun"}</h4>
-                  <div className="two">
-                    <div>
-                      <label>{("label" in m.g ? m.g.label : "User ID") || "User ID"}</label>
-                      <input id="f-uid" inputMode="numeric" placeholder={("ph" in m.g ? m.g.ph : "Contoh: 12345678") || "Contoh: 12345678"} value={m.uid}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          let inq = m.inq;
-                          if (isPpob(m.g)) {
-                            const digits = v.replace(/\D/g, "");
-                            inq = digits.length >= 8 ? inquiry(m.g, digits) : null;
-                          }
-                          setM({ uid: v, inq });
-                          setStepError("");
-                        }} />
-                    </div>
-                    {"zone" in m.g && m.g.zone ? (
-                      <div><label>Zone ID</label><input id="f-zone" inputMode="numeric" placeholder="Contoh: 2011" value={m.zone} onChange={(e) => { setM({ zone: e.target.value }); setStepError(""); }} /></div>
-                    ) : "server" in m.g && m.g.server ? (
-                      <div><label>Server</label><select id="f-srv" value={m.server} onChange={(e) => setM({ server: e.target.value })}>{["Asia", "America", "Europe", "TW/HK/MO"].map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
-                    ) : <div></div>}
+                  <div className="block-head">
+                    <h4>{isPpob(m.g) ? "Data pelanggan" : "Data akun"}</h4>
+                    <p className="hint" style={{ marginTop: 4 }}>{isPpob(m.g) ? "Isi nomor pelanggan, detail akan muncul otomatis." : "Pastikan ID sesuai agar pesanan masuk ke akun yang benar."}</p>
                   </div>
-                  <div className="one" style={{ marginTop: 10 }}>
-                    <label>Nomor WhatsApp (untuk bukti transaksi)</label>
-                    <input id="f-wa" inputMode="tel" placeholder="08xxxxxxxxxx" value={m.wa} onChange={(e) => { setM({ wa: e.target.value }); setStepError(""); }} />
-                  </div>
-                  {isPpob(m.g) && (
-                    <div className={`inq${m.inq ? " show" : ""}`} id="inq">
-                      {m.inq && (<><h5>Detail pelanggan</h5>{m.inq.map(([k, x]) => <div className="row" key={k}><span>{k}</span><b>{x}</b></div>)}</>)}
+                  <div className="form-card">
+                    <div className="two">
+                      <div className="field">
+                        <label htmlFor="f-uid">{("label" in m.g ? m.g.label : "User ID") || "User ID"}</label>
+                        <input id="f-uid" name="uid" autoComplete="off" inputMode="numeric" placeholder={("ph" in m.g ? m.g.ph : "Contoh: 12345678") || "Contoh: 12345678"} value={m.uid}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            let inq = m.inq;
+                            if (isPpob(m.g)) {
+                              const digits = v.replace(/\D/g, "");
+                              inq = digits.length >= 8 ? inquiry(m.g, digits) : null;
+                            }
+                            setM({ uid: v, inq });
+                            setStepError("");
+                          }} />
+                      </div>
+                      {"zone" in m.g && m.g.zone ? (
+                        <div className="field"><label htmlFor="f-zone">Zone ID</label><input id="f-zone" name="zone" autoComplete="off" inputMode="numeric" placeholder="Contoh: 2011" value={m.zone} onChange={(e) => { setM({ zone: e.target.value }); setStepError(""); }} /></div>
+                      ) : "server" in m.g && m.g.server ? (
+                        <div className="field"><label htmlFor="f-srv">Server</label><select id="f-srv" name="server" value={m.server} onChange={(e) => setM({ server: e.target.value })}>{["Asia", "America", "Europe", "TW/HK/MO"].map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
+                      ) : <div className="field field-empty" aria-hidden="true"></div>}
                     </div>
-                  )}
-                  <p className="err" id="err1" style={{ display: stepError ? "block" : "none" }}>{stepError}</p>
-                  <p className="hint">{isPpob(m.g) ? "Data pelanggan muncul otomatis setelah nomor diisi. Cek dulu namanya ya." : "ID bisa dilihat di menu profil dalam game. Kami tidak pernah meminta password."}</p>
+                    <div className="field" style={{ marginTop: 12 }}>
+                      <label htmlFor="f-wa">Nomor WhatsApp</label>
+                      <input id="f-wa" name="wa" autoComplete="tel" inputMode="tel" placeholder="08xxxxxxxxxx" value={m.wa} onChange={(e) => { setM({ wa: e.target.value }); setStepError(""); }} />
+                      <span className="hint" style={{ marginTop: 6 }}>Untuk bukti dan info transaksi.</span>
+                    </div>
+                    {isPpob(m.g) && (
+                      <div className={`inq${m.inq ? " show" : ""}`} id="inq">
+                        {m.inq && (<><h5>Detail pelanggan</h5>{m.inq.map(([k, x]) => <div className="row" key={k}><span>{k}</span><b>{x}</b></div>)}</>)}
+                      </div>
+                    )}
+                    <p className="err" id="err1" style={{ display: stepError ? "block" : "none" }}>{stepError}</p>
+                  </div>
+                  <p className="hint note-inline">{isPpob(m.g) ? "Periksa nama dan detail pelanggan sebelum lanjut." : "Kami tidak pernah meminta password akun game kamu."}</p>
                 </div>
               )}
 
               {m.step === 2 && (() => {
                 const its = itemsOf(m.g);
                 return (
-                  <div className="block">
-                    <h4><em>2</em>Pilih {"list" in m.g && m.g.list ? "produk" : "nominal"}</h4>
-                    {m.inq ? <p className="hint" style={{ margin: "-4px 0 12px" }}>Untuk <b>{m.inq[0]?.[1]}</b> · {m.inq[1]?.[1]}</p> : null}
+                  <div className="block formstep">
+                    <div className="block-head">
+                      <h4>Pilih {"list" in m.g && m.g.list ? "produk" : "nominal"}</h4>
+                      {m.inq ? <p className="hint" style={{ marginTop: 4 }}>Untuk <b>{m.inq[0]?.[1]}</b> · {m.inq[1]?.[1]}</p> : <p className="hint" style={{ marginTop: 4 }}>Pilih nominal yang kamu butuhkan.</p>}
+                    </div>
                     <div className="noms">
                       {its.map((it, i) => (
                         <button className={`opt${m.item && m.item.n === it.n ? " sel" : ""}`} data-i={i} key={it.n + i} onClick={() => { setM({ item: it }); setStepError(""); }}>
-                          {it.hot ? <span className="hot">LARIS</span> : null}
-                          <b style={{ marginTop: it.hot ? 8 : 0 }}>{it.n}</b>
-                          {it.old ? <s>{rp(it.old)}</s> : null}
+                          {it.hot ? <span className="hot">Laris</span> : null}
+                          <b style={{ marginTop: it.hot ? 10 : 0 }}>{it.n}</b>
+                          {it.old ? <s>{rp(it.old)}</s> : <span className="opt-spacer" />}
                           <span className="price">{rp(it.p)}</span>
                         </button>
                       ))}
@@ -587,29 +601,39 @@ export default function JovikaApp() {
               })()}
 
               {m.step === 3 && (
-                <>
-                  <div className="block">
-                    <h4><em>3</em>Pilih metode pembayaran</h4>
-                    {PAY.map((grp) => (
-                      <div className="paygroup" key={grp.g}>
-                        <p>{grp.g}</p>
-                        <div className="payopts">
-                          {grp.items.map((p) => (
-                            <button className={`opt${m.pay && m.pay.id === p.id ? " sel" : ""}`} data-p={p.id} key={p.id} onClick={() => { setM({ pay: p }); setStepError(""); }}>
-                              <b>{p.n}</b>
-                              <small>{p.fee(totals.sub) ? "Biaya " + rp(p.fee(totals.sub)) : "Tanpa biaya"}</small>
-                              <span className="price">{rp(totals.sub + p.fee(totals.sub))}</span>
-                            </button>
-                          ))}
+                <div className="step3-layout">
+                  <div className="block formstep">
+                    <div className="block-head">
+                      <h4>Metode pembayaran</h4>
+                      <p className="hint" style={{ marginTop: 4 }}>Pilih cara bayar yang paling nyaman.</p>
+                    </div>
+                    <div className="paygroups">
+                      {PAY.map((grp) => (
+                        <div className="paygroup" key={grp.g}>
+                          <p>{grp.g}</p>
+                          <div className="payopts">
+                            {grp.items.map((p) => (
+                              <button className={`opt payopt${m.pay && m.pay.id === p.id ? " sel" : ""}`} data-p={p.id} key={p.id} onClick={() => { setM({ pay: p }); setStepError(""); }}>
+                                <span className="payopt-main">
+                                  <b>{p.n}</b>
+                                  <small>{p.fee(totals.sub) ? "Biaya " + rp(p.fee(totals.sub)) : "Tanpa biaya"}</small>
+                                </span>
+                                <span className="price">{rp(totals.sub + p.fee(totals.sub))}</span>
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                     <p className="err" id="err3" style={{ display: stepError ? "block" : "none" }}>{stepError}</p>
                   </div>
-                  <div className="block">
-                    <h4><em>4</em>Kode promo</h4>
-                    <div className="cekform">
-                      <input id="f-promo" placeholder="Opsional, contoh: JOVIKA10" value={m.promo} onChange={(e) => setM({ promo: e.target.value })} />
+                  <div className="block formstep">
+                    <div className="block-head">
+                      <h4>Kode promo</h4>
+                      <p className="hint" style={{ marginTop: 4 }}>Opsional, satu kode per transaksi.</p>
+                    </div>
+                    <div className="promo-row">
+                      <input id="f-promo" name="promo" aria-label="Kode promo" autoComplete="off" spellCheck={false} placeholder="Contoh: JOVIKA10" value={m.promo} onChange={(e) => setM({ promo: e.target.value })} />
                       <button className="btn ghost" id="applyp" type="button" onClick={() => {
                         const code = m.promo.trim().toUpperCase();
                         if (code && !PROMO[code]) toast("Kode promo tidak dikenal");
@@ -619,61 +643,69 @@ export default function JovikaApp() {
                         setPromoMsg(code ? (c.disc ? "Promo aktif, hemat " + rp(c.disc) : "Kode tidak berlaku untuk pesanan ini.") : "");
                       }}>Pakai</button>
                     </div>
-                    <p className="hint" id="promomsg">{promoMsg || (m.promo && totals.disc ? "Promo aktif, hemat " + rp(totals.disc) : m.promo && !totals.disc ? "Kode tidak berlaku untuk pesanan ini." : "")}</p>
+                    <p className={`promo-msg${promoMsg || (m.promo && totals.disc) ? " ok" : (m.promo && !totals.disc ? " warn" : "")}`} id="promomsg">{promoMsg || (m.promo && totals.disc ? "Promo aktif, hemat " + rp(totals.disc) : m.promo && !totals.disc ? "Kode tidak berlaku untuk pesanan ini." : "Belum ada kode promo dipakai.")}</p>
                   </div>
-                  <div className="block confirm">
-                    <h4>Ringkasan</h4>
-                    {m.inq ? m.inq.map(([k, x]) => <div className="row" key={k}><span>{k}</span><b>{x}</b></div>) : <div className="row"><span>Akun</span><b>{m.uid}{m.zone ? " (" + m.zone + ")" : ""}{"server" in m.g && m.g.server ? " · " + m.server : ""}</b></div>}
-                    <div className="row"><span>Item</span><b>{m.item?.n}</b></div>
-                    <div className="row"><span>Harga</span><b>{rp(totals.sub)}</b></div>
-                    <div className="row"><span>Biaya layanan</span><b>{rp(totals.fee)}</b></div>
-                    {totals.disc ? <div className="row"><span>Diskon</span><b style={{ color: "var(--cyan)" }}>-{rp(totals.disc)}</b></div> : null}
+                  <div className="block confirm receipt">
+                    <div className="block-head"><h4>Ringkasan pesanan</h4></div>
+                    <div className="receipt-body">
+                      {m.inq ? m.inq.map(([k, x]) => <div className="row" key={k}><span>{k}</span><b>{x}</b></div>) : <div className="row"><span>Akun</span><b>{m.uid}{m.zone ? " (" + m.zone + ")" : ""}{"server" in m.g && m.g.server ? " · " + m.server : ""}</b></div>}
+                      <div className="row"><span>Item</span><b>{m.item?.n}</b></div>
+                      <div className="row"><span>Harga</span><b>{rp(totals.sub)}</b></div>
+                      <div className="row"><span>Biaya layanan</span><b>{rp(totals.fee)}</b></div>
+                      {totals.disc ? <div className="row disc"><span>Diskon</span><b>-{rp(totals.disc)}</b></div> : null}
+                      <div className="row total"><span>Total bayar</span><b>{rp(totals.total)}</b></div>
+                    </div>
                   </div>
-                </>
+                </div>
               )}
 
               {m.step === 4 && m.inv && (
                 <div className="paybox2 ty" id="paystate">
                   {!m.paid ? (
                     <>
-                      <p className="eyebrow">Invoice {m.inv}</p>
-                      <h3 className="tyh">Terima kasih, pesanan dibuat!</h3>
-                      <p className="hint" style={{ margin: 0 }}>{m.item?.n} · {m.inq ? m.inq[0]?.[1] : m.uid}</p>
-                      <h3 style={{ fontSize: 30, margin: "10px 0 0" }}>{rp(totals.total)}</h3>
+                      <div className="pay-top">
+                        <p className="eyebrow">Invoice {m.inv}</p>
+                        <h3 className="tyh">Selesaikan pembayaran</h3>
+                        <p className="hint" style={{ margin: 0 }}>{m.item?.n} · {m.inq ? m.inq[0]?.[1] : m.uid}</p>
+                      </div>
+                      <div className="pay-amount-card">
+                        <span>Total bayar</span>
+                        <b>{rp(totals.total)}</b>
+                        <p className="pay-timer">Sisa waktu <span className="timer" id="timer">{formatTimer(m.timeLeft ?? 900)}</span></p>
+                      </div>
                       {m.pay?.id === "qris" ? (
                         <>
                           <div className="qrwrap">
                             <div className="qrhead"><span>QRIS</span>JOVIKA GAMES</div>
-                            <img src="/assets/images/payments/qris-baru.png" alt="Kode QRIS" style={{ width: 180, maxWidth: "100%", height: "auto", display: "block", margin: "0 auto", background: "#fff" }} />
+                            <img src="/assets/images/payments/qris-baru.png" alt="Kode QRIS" style={{ width: 200, maxWidth: "100%", height: "auto", display: "block", margin: "0 auto", background: "#fff", borderRadius: 12 }} />
                             <div className="qrfoot">NMID: ID1026{m.inv.slice(4)}88 · A01</div>
                           </div>
-                          <div className="howto"><b>Cara bayar</b><ol><li>Buka m-banking atau e-wallet apa pun.</li><li>Pilih menu Scan / QRIS, arahkan ke kode di atas.</li><li>Pastikan nominal {rp(totals.total)}, lalu konfirmasi.</li></ol></div>
-                          <button className="btn ghost" onClick={() => toast("QRIS disimpan ke galeri (simulasi)")}>Simpan QRIS</button>
+                          <div className="howto"><b>Cara bayar</b><ol><li>Buka m-banking atau e-wallet apa pun.</li><li>Pilih Scan / QRIS dan arahkan ke kode di atas.</li><li>Pastikan nominal {rp(totals.total)}, lalu konfirmasi.</li></ol></div>
+                          <button className="btn ghost" onClick={() => toast("QRIS disimpan")}>Simpan QRIS</button>
                         </>
                       ) : ["bca", "bri", "mandiri", "bni"].includes(m.pay?.id || "") ? (
-                        <>
-                          <p>Transfer ke Virtual Account {m.pay?.n}:</p>
+                        <div className="va-block">
+                          <p className="hint" style={{ margin: 0 }}>Transfer ke Virtual Account {m.pay?.n}</p>
                           <div className="va">8808 {m.inv.slice(4)} {String(Date.now()).slice(-4)}</div>
                           <button className="btn ghost" onClick={() => toast("Nomor VA disalin")}>Salin nomor VA</button>
-                        </>
+                        </div>
                       ) : (
-                        <>
-                          <p>Notifikasi pembayaran sudah dikirim ke aplikasi {m.pay?.n} untuk nomor {m.wa}.</p>
+                        <div className="va-block">
+                          <p className="hint" style={{ margin: 0 }}>Notifikasi pembayaran dikirim ke {m.pay?.n} ({m.wa}).</p>
                           <div className="va">{m.pay?.n}</div>
-                        </>
+                        </div>
                       )}
-                      <p className="hint">Selesaikan dalam <span className="timer" id="timer">{formatTimer(m.timeLeft ?? 900)}</span></p>
-                      <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 14, flexWrap: "wrap" }}>
+                      <div className="pay-actions">
                         <button className="btn" id="paid" onClick={markPaid} disabled={m.verifying}>{m.verifying ? "Memverifikasi..." : "Saya sudah bayar"}</button>
                       </div>
-                      <p className="hint">Ini simulasi. Klik tombol di atas untuk melihat alur pesanan sukses.</p>
+                      <p className="hint" style={{ marginTop: 10 }}>Konfirmasi setelah pembayaran selesai untuk melihat status pesanan.</p>
                     </>
                   ) : (
                     (() => {
                       const t = invTx || txMap[m.inv];
                       return (
                         <>
-                          <div className="done-badge">OK</div>
+                          <div className="done-badge">✓</div>
                           <h3 style={{ fontSize: 24 }}>{isPpob(m.g) ? "Pembayaran berhasil" : "Top up berhasil"}</h3>
                           <p className="hint" style={{ fontSize: 15 }}>
                             {m.g.id === "pln"
